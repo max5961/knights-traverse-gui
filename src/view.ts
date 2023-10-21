@@ -1,3 +1,5 @@
+import { ChessBoard } from "./controller";
+import { KnightPiece } from "./controller";
 import { createElement as create } from "./createElement";
 
 export class Build {
@@ -10,6 +12,7 @@ export class Build {
                 create("div", { class: "empty-row" }),
                 Build.numberCoords(),
                 Build.chessBoard(),
+                create("div", { class: "empty-space" })
             )
         );
     }
@@ -61,6 +64,14 @@ export class Build {
             } 
         }
 
+        const locations: HTMLCollection = board.children;
+        for (let i = 0; i < locations.length; i++) {
+            const square = locations.item(i);
+            square?.addEventListener("click", ChessBoard.setDestination);
+        }
+
+        const knightPiece = new KnightPiece(board.children[3]);
+
         return board;
     }
 
@@ -87,5 +98,27 @@ export class Build {
                 create("div", { class: "section" }),
             )
         )
+    }
+
+    // prettier-ignore
+    static mainSection(): HTMLElement {
+        return (
+            create("section", { id: "main-section" }, 
+                create("form", { id: "run-coords" },
+                    create("div", { class: "input-container start" },
+                        create("label", { for: "start-coord", tc: "Start:" }),
+                        create("input", { id: "start-coord", type: "text", name: "start-coord" })
+                    ),
+                    create("div", { class: "input-container destination" },
+                        create("label", { for: "destination-coord", tc: "Destination:" }),
+                        create("input", { id: "destination-coord", type: "text", name: "destination-coord" })
+                    ),
+                    create("button", { class: "run-coords", tc: "GO" }),
+                ),
+                create("div", { class: "previous-path" },
+                    create("span", { class: "path", tc: "Shortest path from A1 to B3 is 1 move" })
+                )
+            )
+        );
     }
 }

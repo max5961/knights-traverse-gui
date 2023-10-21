@@ -1,12 +1,18 @@
 @import "./reset.css";
+// Onest font
+@import url("https://fonts.googleapis.com/css2?family=Onest:wght@500&display=swap");
 
 $main-bg: #fefae3;
 $light-square: $main-bg;
 $dark-square: #d4a469;
-$highlight-color: #679267;
+$valid-drop: #00cd34;
+$marker-color: #000000;
+$go-button: #befff5;
+$section-bg: #8d7b66;
 
 // fonts
-$font-color: #b17036;
+$main-font-color: #b17036;
+$main-font-family: "Onest", sans-serif;
 
 body {
     height: 100vh;
@@ -15,7 +21,9 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    color: $font-color;
+    color: $main-font-color;
+    font-family: $main-font-family;
+    position: relative;
 }
 
 #content {
@@ -29,51 +37,63 @@ body {
     transition: opacity 500ms ease-in-out;
 }
 
-nav {
+section#main-section {
     width: 100%;
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    grid-template-rows: repeat(2, 1fr);
-    background-color: $dark-square;
-    border-radius: 10px;
+    height: auto;
+    padding: 10px;
+    margin-bottom: 20px;
+    border-radius: 5px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 20px;
+    color: $light-square;
+    background-color: $section-bg;
 
-    .input-container {
-        padding: 5px 5px 5px 20px;
+    form#run-coords {
         display: flex;
+        justify-content: space-around;
         align-items: center;
-        justify-content: space-between;
 
-        label {
-            padding: 0;
+        .input-container {
             display: flex;
             align-items: center;
             gap: 10px;
-            height: auto;
+
+            input {
+                width: 55px;
+                border: none;
+                border-radius: 5px;
+                background-color: $light-square;
+            }
+        }
+
+        button {
+            padding: 5px 20px 5px 20px;
+            border-radius: 5px;
+            background-color: $go-button;
+            font-weight: 900;
         }
     }
 
-    input {
-        width: 50px;
-        border-radius: 5px;
-        background-color: $light-square;
-        border: none;
-    }
-
-    button {
-        padding: 5px 10px 5px 10px;
-        border-radius: 15%;
+    .previous-path {
+        display: flex;
+        justify-content: center;
+        align-items: center;
     }
 }
 
 .board-container {
-    height: 600px;
-    width: 600px;
+    height: 700px;
+    width: 700px;
     background-color: $main-bg;
     display: grid;
-    grid-template-rows: 0.5fr 8fr;
+    grid-template-rows: 0.5fr 8fr 0.5fr;
     grid-template-columns: 0.5fr 8fr 0.5fr;
     opacity: 0;
     transition: opacity 1500ms linear;
+    border: 5px solid $dark-square;
+    border-radius: 5px;
 
     .coordinates {
         &.letters {
@@ -95,7 +115,7 @@ nav {
         display: grid;
         grid-template-rows: repeat(8, 1fr);
         grid-template-columns: repeat(8, 1fr);
-        border: 5px solid $dark-square;
+        border: 3px solid $dark-square;
         border-radius: 5px;
 
         .square {
@@ -110,8 +130,22 @@ nav {
             &.dark {
                 background-color: $dark-square;
             }
+
+            &.dark,
+            &.light {
+                transition: background-color 100ms ease-in-out;
+            }
+
+            &.valid-drop {
+                background-color: $valid-drop;
+            }
         }
     }
+}
+
+img.knight-svg {
+    position: absolute;
+    z-index: 1;
 }
 
 .destination-marker {
@@ -139,7 +173,7 @@ nav {
         }
 
         .leg {
-            background-color: $highlight-color;
+            background-color: $marker-color;
             border-radius: 5px;
             transition: all 150ms ease-in-out;
 

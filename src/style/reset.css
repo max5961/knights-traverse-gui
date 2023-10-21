@@ -6,7 +6,7 @@
 
 button {
     background-color: inherit;
-    color: inherit;
+    /* color: inherit; */
     border: none;
 }
 
@@ -27,5 +27,3 @@ input {
     background-color: inherit;
     height: 35px;
 }
-
-
