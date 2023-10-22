@@ -1,4 +1,4 @@
-import { ChessBoard } from "./controller";
+import { DestMarker } from "./controller";
 import { DraggableKnight } from "./controller";
 import { createElement as create } from "./createElement";
 
@@ -67,7 +67,7 @@ export class Build {
         const locations: HTMLCollection = board.children;
         for (let i = 0; i < locations.length; i++) {
             const square = locations.item(i);
-            square?.addEventListener("click", ChessBoard.setDestination);
+            square?.addEventListener("click", DestMarker.setDestination);
         }
 
         new DraggableKnight(board.firstElementChild);

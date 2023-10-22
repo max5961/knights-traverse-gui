@@ -11,7 +11,71 @@ export class Load {
     }
 }
 
-export class ChessBoard {
+export class Coords {
+    static updateGUI(): void {
+        const startInput: HTMLInputElement =
+            document.querySelector("input#start-coord")!;
+
+        const destInput: HTMLInputElement = document.querySelector(
+            "input#destination-coord",
+        )!;
+
+        const start: string = Coords.getStartString();
+        const dest: string | null = Coords.getDestString();
+        console.log(start, dest);
+
+        startInput.value = start;
+        dest ? (destInput.textContent = dest) : (destInput.textContent = "");
+    }
+
+    static getStart(): number[] | any {
+        return Coords.getCoords("start-location");
+    }
+
+    static getStartString(): string {
+        return Coords.getStringCoords("start-location");
+    }
+
+    static getDest(): number[] | any {
+        return Coords.getCoords("destination");
+    }
+
+    static getDestString(): string {
+        return Coords.getStringCoords("destination");
+    }
+
+    static getCoords(targetClass: string): number[] | any {
+        const squares = Coords.getAllSquares();
+
+        let coords: number[] | null = null;
+        squares.forEach((square) => {
+            if (square.classList.contains(targetClass)) {
+                const coordAttr: string = square.getAttribute("coord")!;
+                coords = [
+                    Number(coordAttr.split("-")[0]),
+                    Number(coordAttr.split("-")[1]),
+                ];
+            }
+        });
+
+        return coords;
+    }
+
+    static getStringCoords(targetClass: string): string | any {
+        const coords = Coords.getCoords(targetClass);
+        const letters = [null, "A", "B", "C", "D", "E", "F", "G", "H"];
+        if (!coords) {
+            return null;
+        }
+        return `${letters[coords[0]]}${coords[1]}`;
+    }
+
+    static getAllSquares(): NodeListOf<HTMLElement> {
+        return document.querySelectorAll(".square");
+    }
+}
+
+export class DestMarker {
     // prettier-ignore
     static animateDestinationMarker(): void {
         const nodes: NodeListOf<HTMLElement> = document.querySelectorAll(".leg")!;
@@ -47,7 +111,7 @@ export class ChessBoard {
         destination.classList.add("destination");
         destination.appendChild(Build.destinationMarker());
         setTimeout(() => {
-            ChessBoard.animateDestinationMarker();
+            DestMarker.animateDestinationMarker();
         });
     }
 }
