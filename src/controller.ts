@@ -73,7 +73,7 @@ export class DraggableKnight {
         knightImage.onmouseup = (e) => this.setClick(e);
         knightImage.onmousedown = (e) => this.setClick(e);
 
-        // make sure there is only one location with the start point class
+        // make sure there is only one location with the start location class
         this.removeGlobalClassName("start-location", ".square");
         parentElement.classList.add("start-location");
 
