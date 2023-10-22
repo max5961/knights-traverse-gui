@@ -41,7 +41,7 @@ export class ChessBoard {
 
         const destination = e.currentTarget;
         // do not allow placing the marker on top of the start point where the knight piece is located
-        if (destination.classList.contains("start-point")) {
+        if (destination.classList.contains("start-location")) {
             return;
         }
         destination.classList.add("destination");
@@ -52,15 +52,11 @@ export class ChessBoard {
     }
 }
 
-export class KnightPiece {
+export class DraggableKnight {
     mouseDown: boolean;
-    startHTMLClass: string;
-    destHTMLClass: string;
 
     constructor(parentElement: any = null) {
         this.mouseDown = false;
-        this.startHTMLClass = "start-point";
-        this.destHTMLClass = "destination";
         this.init(parentElement);
     }
 
@@ -69,7 +65,7 @@ export class KnightPiece {
             document.querySelector(".chess-board")!.firstElementChild;
 
         const knightImage = create("img", {
-            class: "knight-svg",
+            class: "knight-piece",
             src: knight,
             draggable: "false",
         });
@@ -78,28 +74,38 @@ export class KnightPiece {
         knightImage.onmousedown = (e) => this.setClick(e);
 
         // make sure there is only one location with the start point class
-        this.removeGlobalClassName(this.startHTMLClass, ".square");
-        parentElement.classList.add(this.startHTMLClass);
+        this.removeGlobalClassName("start-location", ".square");
+        parentElement.classList.add("start-location");
 
         parentElement.appendChild(knightImage);
     }
 
-    removeGlobalClassName(toRemove: string, qSelect: string) {
-        const squares: NodeListOf<HTMLElement> =
-            document.querySelectorAll(qSelect);
-        squares.forEach((square) => {
-            square.classList.remove(toRemove);
-            this.resetBG(square);
-        });
+    setClick(e: any) {
+        const knight: HTMLElement = document.querySelector(".knight-piece")!;
+
+        // set the mouseDown property if mousedown or mouseup on knight
+        // dragKnight changes location of the knight piece based on the cursor position
+
+        if (e.type === "mousedown") {
+            this.mouseDown = true;
+            knight.style.cursor = "grab";
+            document.body.addEventListener("mousemove", this.dragKnight);
+        }
+
+        if (e.type === "mouseup") {
+            this.mouseDown = false;
+            knight.style.cursor = "default";
+            this.placeKnight(e);
+            document.body.removeEventListener("mousemove", this.dragKnight);
+        }
     }
 
-    dragImage = (e: any) => {
-        let knight: HTMLElement = document.querySelector(".knight-svg")!;
+    dragKnight = (e: any) => {
+        let knight: HTMLElement = document.querySelector(".knight-piece")!;
         const chessBoard: HTMLElement = document.querySelector(".chess-board")!;
 
         if (this.mouseDown) {
-            const chessBoardRect = chessBoard.getBoundingClientRect();
-            if (this.isWithinElement(e, chessBoardRect)) {
+            if (this.isWithinElement(e, chessBoard)) {
                 // chess piece is within the bounds of the chess board
                 knight.style.top = `${e.clientY - knight.offsetHeight / 2}px`;
                 knight.style.left = `${e.clientX - knight.offsetWidth / 2}px`;
@@ -108,68 +114,78 @@ export class KnightPiece {
                 // chess piece has traveled out of bounds of the chess board
                 this.mouseDown = false;
                 knight.style.cursor = "default";
-                this.placeImage(e);
+                this.placeKnight(e);
             }
         }
     };
 
-    placeImage(e: any) {
+    placeKnight(e: any) {
         // remove the knight from the DOM
-        // a new knight will be appended to the chess board when a new KnightPiece object is initialized
-        (document.querySelector(".knight-svg") as HTMLElement).remove();
+        // a new knight will be appended to the chess board when a new DraggableKnight object is initialized
+        (document.querySelector(".knight-piece") as HTMLElement).remove();
 
         // originalStartPoint is where the knight will be appended if its not in a valid spot upon placement
         const originalStartPoint: HTMLElement =
-            document.querySelector(".start-point")!;
+            document.querySelector(".start-location")!;
 
         // check to see if the knight has traveled out of bounds of the chess board
         // if it is out of bounds, append a new knight to the originalStartPoint
         const chessBoard: HTMLElement = document.querySelector(".chess-board")!;
-        if (!this.isWithinElement(e, chessBoard.getBoundingClientRect())) {
-            new KnightPiece(originalStartPoint);
+        if (!this.isWithinElement(e, chessBoard)) {
+            new DraggableKnight(originalStartPoint);
             return;
         }
 
         const locations: NodeListOf<HTMLElement> =
             document.querySelectorAll(".square");
+
         locations.forEach((location) => {
-            const locationRect = location.getBoundingClientRect();
-            if (this.isWithinElement(e, locationRect)) {
-                if (this.isValidDropPoint(location)) {
+            if (this.isWithinElement(e, location)) {
+                if (this.isValidDropLoc(location)) {
                     // knight is within the bounds of the specified square AND is on a valid drop point
-                    // append a new knight tied to a new KnightPiece object
-                    new KnightPiece(location);
+                    // append a new knight to the specified square
+                    new DraggableKnight(location);
                     return;
                 } else {
                     // knight is within the bounds of the specified square
                     // but is NOT in a valid location (can't drop on the destination point)
-                    // append a new knight in place of the original start point
-                    new KnightPiece(originalStartPoint);
+                    // append a new knight to the original start point
+                    new DraggableKnight(originalStartPoint);
                     return;
                 }
             }
         });
     }
 
-    isWithinElement(e: any, bRect: any) {
+    isWithinElement(e: any, el: HTMLElement): boolean {
+        const boundingRect = el.getBoundingClientRect();
         return (
-            e.clientX >= bRect.left &&
-            e.clientX <= bRect.right &&
-            e.clientY >= bRect.top &&
-            e.clientY <= bRect.bottom
+            e.clientX >= boundingRect.left &&
+            e.clientX <= boundingRect.right &&
+            e.clientY >= boundingRect.top &&
+            e.clientY <= boundingRect.bottom
         );
     }
 
-    isValidDropPoint(square: HTMLElement): boolean {
-        return !square.classList.contains(this.destHTMLClass);
+    removeGlobalClassName(toRemove: string, qSelect: string): void {
+        const squares: NodeListOf<HTMLElement> =
+            document.querySelectorAll(qSelect);
+
+        squares.forEach((square) => {
+            square.classList.remove(toRemove);
+            this.resetLocBG(square);
+        });
     }
 
-    highlightDropPoint(square: HTMLElement): void {
-        const highlightColor = "#00cd34";
+    isValidDropLoc(location: HTMLElement): boolean {
+        return !location.classList.contains("destination");
+    }
+
+    highlightDropLoc(square: HTMLElement): void {
         square.classList.add("valid-drop");
     }
 
-    resetBG(square: HTMLElement) {
+    resetLocBG(square: HTMLElement): void {
         square.classList.remove("valid-drop");
     }
 
@@ -177,33 +193,14 @@ export class KnightPiece {
         const squares: NodeListOf<HTMLElement> =
             document.querySelectorAll(".square");
         squares.forEach((square) => {
-            if (this.isWithinElement(e, square.getBoundingClientRect())) {
-                if (this.isValidDropPoint(square)) {
-                    this.highlightDropPoint(square);
+            if (this.isWithinElement(e, square)) {
+                if (this.isValidDropLoc(square)) {
+                    this.highlightDropLoc(square);
                     return;
                 }
             }
 
-            this.resetBG(square);
+            this.resetLocBG(square);
         });
-    }
-
-    setClick(e: any) {
-        const chessBoard: HTMLElement = document.querySelector(".chess-board")!;
-        const knight: HTMLElement = document.querySelector(".knight-svg")!;
-
-        if (e.type === "mousedown") {
-            this.mouseDown = true;
-            knight.style.cursor = "grab";
-            chessBoard.addEventListener("mousemove", this.dragImage);
-        }
-
-        if (e.type === "mouseup") {
-            this.mouseDown = false;
-            knight.style.cursor = "default";
-            this.placeImage(e);
-            chessBoard.removeEventListener("mousemove", this.dragImage);
-            return;
-        }
     }
 }

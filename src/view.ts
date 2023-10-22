@@ -1,5 +1,5 @@
 import { ChessBoard } from "./controller";
-import { KnightPiece } from "./controller";
+import { DraggableKnight } from "./controller";
 import { createElement as create } from "./createElement";
 
 export class Build {
@@ -70,7 +70,7 @@ export class Build {
             square?.addEventListener("click", ChessBoard.setDestination);
         }
 
-        const knightPiece = new KnightPiece(board.children[3]);
+        new DraggableKnight(board.firstElementChild);
 
         return board;
     }
