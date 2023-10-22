@@ -12,7 +12,7 @@ export class Load {
 }
 
 export class Coords {
-    static updateGUI(): void {
+    static updateInputValue(): void {
         const startInput: HTMLInputElement =
             document.querySelector("input#start-coord")!;
 
@@ -22,10 +22,90 @@ export class Coords {
 
         const start: string = Coords.getStartString();
         const dest: string | null = Coords.getDestString();
-        console.log(start, dest);
 
         startInput.value = start;
-        dest ? (destInput.textContent = dest) : (destInput.textContent = "");
+        dest ? (destInput.value = dest) : (destInput.value = "");
+    }
+
+    // prettier-ignore
+    static updateLocationFromInput(className: string, inputValue: string): void {
+        const squares = Coords.getAllSquares();
+        squares.forEach((square) => {
+            if (square.classList.contains(className)) {
+                square.classList.remove(className);
+                square.removeChild(square.firstElementChild!);
+            }
+        });
+
+        let coordNums: string;
+        const letters = [null, "A", "B", "C", "D", "E", "F", "G", "H"];
+        coordNums = `${letters.indexOf(inputValue[0])}-${inputValue[1]}`;
+
+        squares.forEach((square) => {
+            if (square.getAttribute("coord") === coordNums) {
+                if (className === "start-location") {
+                    new DraggableKnight(square);
+                }
+                if (className === "destination") {
+                    const e = null;
+                    DestMarker.setDestination(e, square);
+                }
+            }
+        });
+    }
+
+    static inputIsValid(value: string): boolean {
+        return value.length > 0 && value.length <= 2;
+    }
+
+    static validateInput(e: any): void {
+        const inputField: HTMLInputElement = e.target;
+        const letters = ["A", "B", "C", "D", "E", "F", "G", "H"];
+        const numbers = ["1", "2", "3", "4", "5", "6", "7", "8"];
+        const firstLetter: string = inputField.value[0]
+            ? inputField.value[0].toUpperCase()
+            : "";
+        const secondLetter: string = inputField.value[1]
+            ? inputField.value[1]
+            : "";
+
+        if (!letters.includes(firstLetter)) {
+            inputField.value = "";
+            return;
+        }
+
+        if (!numbers.includes(secondLetter)) {
+            inputField.value = firstLetter;
+            return;
+        }
+
+        if (inputField.value.length > 2) {
+            inputField.value = inputField.value.slice(0, 2);
+            return;
+        }
+
+        // prettier-ignore
+        const startInput: HTMLInputElement = (document.querySelector("input#start-coord") as HTMLInputElement);
+        // prettier-ignore
+        const destInput: HTMLInputElement = (document.querySelector("input#destination-coord") as HTMLInputElement);
+
+        if (e.target === startInput && e.target.value === destInput.value) {
+            e.target.value = e.target.value.slice(0, 1);
+            return;
+        }
+
+        if (e.target === destInput && e.target.value === startInput.value) {
+            e.target.value = e.target.value.slice(0, 1);
+            return;
+        }
+
+        if (Coords.inputIsValid(startInput.value)) {
+            Coords.updateLocationFromInput("start-location", startInput.value);
+        }
+
+        if (Coords.inputIsValid(destInput.value)) {
+            Coords.updateLocationFromInput("destination", destInput.value);
+        }
     }
 
     static getStart(): number[] | any {
@@ -78,17 +158,20 @@ export class Coords {
 export class DestMarker {
     // prettier-ignore
     static animateDestinationMarker(): void {
-        const nodes: NodeListOf<HTMLElement> = document.querySelectorAll(".leg")!;
-        nodes.forEach((node) => {
-            if (node.className === "leg top" || node.className === "leg bottom") {
-                node.style.height = "100%";
-            } else {
-                node.style.width = "100%";
-            }
-        });
+        setTimeout(() => {
+            const nodes: NodeListOf<HTMLElement> = document.querySelectorAll(".leg")!;
+            nodes.forEach((node) => {
+                if (node.className === "leg top" || node.className === "leg bottom") {
+                    node.style.height = "100%";
+                } else {
+                    node.style.width = "100%";
+                }
+            });
+        }, 0);
     }
 
-    static setDestination(e: any): void {
+    // prettier-ignore
+    static setDestination(e: any, parentElement: HTMLElement | null = null): void {
         const locations: NodeListOf<HTMLElement> = document.querySelectorAll(
             ".chess-board .square",
         );
@@ -103,16 +186,16 @@ export class DestMarker {
             }
         });
 
-        const destination = e.currentTarget;
+        const destination = parentElement ? parentElement : e.currentTarget;
         // do not allow placing the marker on top of the start point where the knight piece is located
         if (destination.classList.contains("start-location")) {
             return;
         }
         destination.classList.add("destination");
         destination.appendChild(Build.destinationMarker());
-        setTimeout(() => {
-            DestMarker.animateDestinationMarker();
-        });
+        DestMarker.animateDestinationMarker();
+
+        Coords.updateInputValue();
     }
 }
 
@@ -209,12 +292,14 @@ export class DraggableKnight {
                     // knight is within the bounds of the specified square AND is on a valid drop point
                     // append a new knight to the specified square
                     new DraggableKnight(location);
+                    Coords.updateInputValue();
                     return;
                 } else {
                     // knight is within the bounds of the specified square
                     // but is NOT in a valid location (can't drop on the destination point)
                     // append a new knight to the original start point
                     new DraggableKnight(originalStartPoint);
+                    Coords.updateInputValue();
                     return;
                 }
             }

@@ -1,5 +1,4 @@
-import { DestMarker } from "./controller";
-import { DraggableKnight } from "./controller";
+import { DestMarker, Coords } from "./controller";
 import { createElement as create } from "./createElement";
 
 export class Build {
@@ -70,8 +69,6 @@ export class Build {
             square?.addEventListener("click", DestMarker.setDestination);
         }
 
-        new DraggableKnight(board.firstElementChild);
-
         return board;
     }
 
@@ -107,11 +104,13 @@ export class Build {
                 create("form", { id: "run-coords" },
                     create("div", { class: "input-container start" },
                         create("label", { for: "start-coord", tc: "Start:" }),
-                        create("input", { id: "start-coord", type: "text", name: "start-coord" })
+                        create("input", { id: "start-coord", type: "text", name: "start-coord", 
+                            evl: { "input": Coords.validateInput } })
                     ),
                     create("div", { class: "input-container destination" },
                         create("label", { for: "destination-coord", tc: "Destination:" }),
-                        create("input", { id: "destination-coord", type: "text", name: "destination-coord" })
+                        create("input", { id: "destination-coord", type: "text", name: "destination-coord",
+                            evl: { "input": Coords.validateInput } })
                     ),
                     create("button", { class: "run-coords", tc: "GO" }),
                 ),
