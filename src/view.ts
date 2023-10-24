@@ -1,4 +1,4 @@
-import { DestMarker, Coords } from "./controller";
+import { DestMarker, Coords, Animate } from "./controller";
 import { createElement as create } from "./createElement";
 
 export class Build {
@@ -112,7 +112,8 @@ export class Build {
                         create("input", { id: "destination-coord", type: "text", name: "destination-coord",
                             evl: { "input": Coords.validateInput } })
                     ),
-                    create("button", { class: "run-coords", tc: "GO" }),
+                    create("button", { class: "run-coords", tc: "GO",
+                        evl: { "click": Animate.moveAlongPath }}),
                 ),
                 create("div", { class: "previous-path" },
                     create("span", { class: "path", tc: "Shortest path from A1 to B3 is 1 move" })

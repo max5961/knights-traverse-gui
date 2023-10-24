@@ -110,19 +110,32 @@ export class Animate {
 
                 // first iteration
                 if (startPosition) {
-                    startPosition.appendChild(create("div", { tc: "start" }));
+                    startPosition.appendChild(
+                        create("div", { class: "marker", tc: "start" }),
+                    );
                 }
 
                 // last iteration
                 if (!dCoords.length) {
                     newPosition.removeChild(newPosition.firstElementChild);
+                    newPosition.classList.remove("destination");
                 } else {
-                    newPosition.appendChild(create("div", { tc: `${i}` }));
+                    newPosition.appendChild(
+                        create("div", { class: "marker", tc: `${i}` }),
+                    );
                 }
 
                 new DraggableKnight(newPosition);
                 Animate.animateSingleCoord(dCoords, i + 1);
             });
+    }
+
+    static clearPreviousMarkers(): void {
+        const markers: NodeListOf<HTMLElement> =
+            document.querySelectorAll(".marker")!;
+        markers.forEach((marker) => {
+            marker.remove();
+        });
     }
 
     // keep the movement speed the same when moving 1 square or 2 squares
@@ -328,6 +341,8 @@ export class DestMarker {
 
     // prettier-ignore
     static setDestination(e: any, parentElement: HTMLElement | null = null): void {
+        Animate.clearPreviousMarkers();
+
         const locations: NodeListOf<HTMLElement> = document.querySelectorAll(
             ".chess-board .square",
         );
@@ -377,6 +392,7 @@ export class DraggableKnight {
 
         knightImage.onmouseup = (e) => this.setClick(e);
         knightImage.onmousedown = (e) => this.setClick(e);
+        knightImage.onclick = () => Animate.clearPreviousMarkers();
 
         // make sure there is only one location with the start location class
         this.removeGlobalClassName("start-location", ".square");
@@ -395,6 +411,7 @@ export class DraggableKnight {
             this.mouseDown = true;
             knight.style.cursor = "grab";
             document.body.addEventListener("mousemove", this.dragKnight);
+            Animate.clearPreviousMarkers();
         }
 
         if (e.type === "mouseup") {
