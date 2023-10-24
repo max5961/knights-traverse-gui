@@ -1,6 +1,7 @@
 import knight from "./Images/knight.svg";
 import { createElement as create } from "./createElement";
 import { Build } from "./view";
+import { shortestPath } from "./model";
 
 export class Load {
     static defaultUI() {
@@ -8,6 +9,108 @@ export class Load {
 
         content.appendChild(Build.mainSection());
         content.appendChild(Build.boardContainer());
+    }
+}
+
+export class Animate {
+    static moveAlongPath(): void {
+        const startCoords: number[] = Coords.getStart();
+        const destCoords: number[] = Coords.getDest();
+        const path: number[][] = shortestPath(startCoords, destCoords);
+        const dCoords: number[][] | any = [];
+
+        for (let i = 0; i < path.length - 1; i++) {
+            const x = path[i][0];
+            const y = path[i][1];
+
+            const nx = path[i + 1][0];
+            const ny = path[i + 1][1];
+
+            const dx = nx - x;
+            const dy = ny - y;
+            dCoords.push([dx, dy]);
+        }
+
+        Animate.animateSingleCoord(dCoords);
+    }
+
+    static animateSingleCoord(dCoords: number[][] | any, i: number = 1): any {
+        const [dx, dy] = dCoords.shift();
+        const knight: HTMLElement = document.querySelector(".knight-piece")!;
+        const square: HTMLElement = document.querySelector(".square")!;
+        const squareSize = square.getBoundingClientRect().height;
+        const xTranslate = dx * squareSize;
+        const yTranslate = dy * squareSize;
+        const transitionDuration = Animate.getKnightTransitionTime();
+
+        const promise = new Promise((resolve) => {
+            resolve(null);
+        });
+
+        promise
+            .then(() => {
+                return new Promise((resolve) => {
+                    knight.style.transform = `translate(${xTranslate}px)`;
+                    resolve(null);
+                });
+            })
+            .then(() => {
+                return new Promise((resolve) => {
+                    setTimeout(() => {
+                        resolve(null);
+                    }, transitionDuration);
+                });
+            })
+            .then(() => {
+                return new Promise((resolve) => {
+                    knight.style.transform = `translate(${xTranslate}px, ${yTranslate}px)`;
+                    resolve(null);
+                });
+            })
+            .then(() => {
+                return new Promise((resolve) => {
+                    setTimeout(() => {
+                        resolve(null);
+                    }, transitionDuration);
+                });
+            })
+            .then(() => {
+                const newPosition = Animate.getWithinSquare();
+                knight.remove();
+                newPosition.appendChild(create("div", { tc: `${i}` }));
+                new DraggableKnight(newPosition);
+                Animate.animateSingleCoord(dCoords, i + 1);
+            });
+    }
+
+    static getKnightTransitionTime(): number | any {
+        const knight: HTMLElement = document.querySelector(".knight-piece")!;
+        const transitionDuration: string =
+            window.getComputedStyle(knight).transitionDuration;
+
+        return parseFloat(transitionDuration) * 1000;
+    }
+
+    static getWithinSquare() {
+        const knight: HTMLElement = document.querySelector(".knight-piece")!;
+        const kPosition = knight.getBoundingClientRect();
+
+        const squares: NodeListOf<HTMLElement> =
+            document.querySelectorAll(".square");
+        let targetSquare: HTMLElement | any;
+        squares.forEach((square) => {
+            const sPosition = square.getBoundingClientRect();
+            if (
+                kPosition.top > sPosition.top &&
+                kPosition.bottom < sPosition.bottom &&
+                kPosition.left > sPosition.left &&
+                kPosition.right < sPosition.right
+            ) {
+                targetSquare = square;
+            }
+        });
+
+        return targetSquare;
     }
 }
 
@@ -60,8 +163,6 @@ export class Coords {
 
     static validateInput(e: any): void {
         const inputField: HTMLInputElement = e.target;
-        const letters = ["A", "B", "C", "D", "E", "F", "G", "H"];
-        const numbers = ["1", "2", "3", "4", "5", "6", "7", "8"];
         const firstLetter: string = inputField.value[0]
             ? inputField.value[0].toUpperCase()
             : "";
@@ -69,11 +170,13 @@ export class Coords {
             ? inputField.value[1]
             : "";
 
+        const letters = ["A", "B", "C", "D", "E", "F", "G", "H"];
         if (!letters.includes(firstLetter)) {
             inputField.value = "";
             return;
         }
 
+        const numbers = ["1", "2", "3", "4", "5", "6", "7", "8"];
         if (!numbers.includes(secondLetter)) {
             inputField.value = firstLetter;
             return;
@@ -89,7 +192,7 @@ export class Coords {
         // prettier-ignore
         const destInput: HTMLInputElement = (document.querySelector("input#destination-coord") as HTMLInputElement);
 
-        if (e.target === startInput && e.target.value === destInput.value) {
+        if (inputField === startInput && e.target.value === destInput.value) {
             e.target.value = e.target.value.slice(0, 1);
             return;
         }
@@ -208,8 +311,10 @@ export class DraggableKnight {
     }
 
     init(parentElement: any = null): void {
-        parentElement ??
-            document.querySelector(".chess-board")!.firstElementChild;
+        if (parentElement === null) {
+            parentElement =
+                document.querySelector(".chess-board")!.firstElementChild;
+        }
 
         const knightImage = create("img", {
             class: "knight-piece",
