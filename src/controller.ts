@@ -13,7 +13,9 @@ export class Load {
 }
 
 export class Animate {
-    static moveAlongPath(): void {
+    static moveAlongPath(e: any): void {
+        e.preventDefault();
+
         const startCoords: number[] = Coords.getStart();
         const destCoords: number[] = Coords.getDest();
         const path: number[][] = shortestPath(startCoords, destCoords);
@@ -35,52 +37,103 @@ export class Animate {
     }
 
     static animateSingleCoord(dCoords: number[][] | any, i: number = 1): any {
+        if (!dCoords.length) {
+            return;
+        }
+
+        let startPosition: HTMLElement;
+        if (i === 1) {
+            startPosition = Animate.getWithinSquare();
+        }
+
         const [dx, dy] = dCoords.shift();
         const knight: HTMLElement = document.querySelector(".knight-piece")!;
+        const originalTransitionDuration = Animate.getKnightTransitionTime();
         const square: HTMLElement = document.querySelector(".square")!;
         const squareSize = square.getBoundingClientRect().height;
         const xTranslate = dx * squareSize;
         const yTranslate = dy * squareSize;
-        const transitionDuration = Animate.getKnightTransitionTime();
 
-        const promise = new Promise((resolve) => {
+        new Promise((resolve) => {
             resolve(null);
-        });
-
-        promise
+        })
+            // traverse the x axis
             .then(() => {
                 return new Promise((resolve) => {
+                    Animate.modifyTransitionDuration(
+                        dx,
+                        originalTransitionDuration,
+                        knight,
+                    );
                     knight.style.transform = `translate(${xTranslate}px)`;
                     resolve(null);
                 });
             })
+
+            // wait until the transition is done
             .then(() => {
                 return new Promise((resolve) => {
                     setTimeout(() => {
                         resolve(null);
-                    }, transitionDuration);
+                    }, Animate.getKnightTransitionTime());
                 });
             })
+
+            // traverse the y axis
             .then(() => {
                 return new Promise((resolve) => {
+                    Animate.modifyTransitionDuration(
+                        dy,
+                        originalTransitionDuration,
+                        knight,
+                    );
                     knight.style.transform = `translate(${xTranslate}px, ${yTranslate}px)`;
                     resolve(null);
                 });
             })
+
+            // wait until the transition is done
             .then(() => {
                 return new Promise((resolve) => {
                     setTimeout(() => {
                         resolve(null);
-                    }, transitionDuration);
+                    }, Animate.getKnightTransitionTime());
                 });
             })
+
+            // reset the position by removing and adding a new knight
+            // otherwise the absolute position stays at the knights start coord
+            // recursively run the function until dCoords empty
             .then(() => {
                 const newPosition = Animate.getWithinSquare();
                 knight.remove();
-                newPosition.appendChild(create("div", { tc: `${i}` }));
+
+                // first iteration
+                if (startPosition) {
+                    startPosition.appendChild(create("div", { tc: "start" }));
+                }
+
+                // last iteration
+                if (!dCoords.length) {
+                    newPosition.removeChild(newPosition.firstElementChild);
+                } else {
+                    newPosition.appendChild(create("div", { tc: `${i}` }));
+                }
+
                 new DraggableKnight(newPosition);
                 Animate.animateSingleCoord(dCoords, i + 1);
             });
+    }
+
+    // keep the movement speed the same when moving 1 square or 2 squares
+    static modifyTransitionDuration(
+        dCoord: number,
+        originalDuration: number,
+        knight: HTMLElement,
+    ): void {
+        knight.style.transitionDuration = `${
+            originalDuration * Math.abs(dCoord)
+        }ms`;
     }
 
     static getKnightTransitionTime(): number | any {
