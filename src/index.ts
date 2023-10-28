@@ -1,21 +1,28 @@
 import "./style/index.scss";
-import { Load, DraggableKnight, Coords, DestMarker } from "./controller";
+import {
+    DOM,
+    Load,
+    DraggableKnight,
+    Coords,
+    DestMarker,
+    Animate,
+} from "./controller";
 import { Build } from "./view";
 
 Load.defaultUI();
 
-const chessBoard: HTMLElement = document.querySelector(".chess-board")!;
-const firstChild = chessBoard.firstElementChild!;
-const lastChild = chessBoard.lastElementChild!;
-new DraggableKnight(firstChild);
-lastChild.appendChild(Build.destinationMarker());
-lastChild.classList.add("destination");
+const chessBoard = DOM.getChessboard();
+const startPosition = chessBoard.children[0]!;
+const destPosition = chessBoard.children[63]!;
+new DraggableKnight(startPosition);
+destPosition.appendChild(Build.destinationMarker());
+destPosition.classList.add("destination");
 DestMarker.animateDestinationMarker();
-
 Coords.updateInputValue();
+Animate.updateMessage();
 
-setTimeout(() => {
+window.addEventListener("load", () => {
     const boardContainer: HTMLElement =
         document.querySelector(".board-container")!;
     boardContainer.style.opacity = "1";
-}, 0);
+});

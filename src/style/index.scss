@@ -7,7 +7,7 @@ $light-square: $main-bg;
 $dark-square: #d4a469;
 $valid-drop: #00cd34;
 $marker-color: #000000;
-$go-button: #befff5;
+$animate-button: #00ff7b;
 $section-bg: #8d7b66;
 
 // fonts
@@ -37,49 +37,57 @@ body {
     transition: opacity 500ms ease-in-out;
 }
 
-section#main-section {
+form {
     width: 100%;
-    height: auto;
+    height: 175px;
     padding: 10px;
     margin-bottom: 20px;
     border-radius: 5px;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    gap: 20px;
     color: $light-square;
     background-color: $section-bg;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    grid-template-rows: repeat(3, 1fr);
+    gap: 10px;
+    justify-items: center;
 
-    form#run-coords {
+    .input-container {
         display: flex;
-        justify-content: space-around;
         align-items: center;
+        gap: 8px;
 
-        .input-container {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-
-            input {
-                width: 55px;
-                border: none;
-                border-radius: 5px;
-                background-color: $light-square;
-            }
-        }
-
-        button {
-            padding: 5px 20px 5px 20px;
+        input {
+            width: 55px;
+            border: none;
             border-radius: 5px;
-            background-color: $go-button;
+            background-color: $light-square;
             font-weight: 900;
         }
     }
 
     .previous-path {
         display: flex;
+        flex-direction: column;
         justify-content: center;
         align-items: center;
+        grid-column: span 2;
+    }
+
+    button {
+        grid-column: span 2;
+        width: 90%;
+        border-radius: 5px;
+        background-color: $animate-button;
+        font-weight: 900;
+        transition: background-color 120ms ease-in-out;
+
+        &:hover {
+            background-color: darken($animate-button, 5);
+        }
+
+        &:active {
+            background-color: darken($animate-button, 10);
+        }
     }
 }
 
@@ -139,13 +147,23 @@ section#main-section {
             &.valid-drop {
                 background-color: $valid-drop;
             }
+
+            .marker {
+                color: green;
+                font-weight: 900;
+            }
         }
     }
 }
 
 img.knight-piece {
     position: absolute;
-    z-index: 1;
+    z-index: 100;
+    transition: transform 250ms linear;
+}
+
+.marker {
+    cursor: default;
 }
 
 .destination-marker {

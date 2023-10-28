@@ -98,26 +98,25 @@ export class Build {
     }
 
     // prettier-ignore
-    static mainSection(): HTMLElement {
+    static mainForm(): HTMLElement {
         return (
-            create("section", { id: "main-section" }, 
-                create("form", { id: "run-coords" },
-                    create("div", { class: "input-container start" },
-                        create("label", { for: "start-coord", tc: "Start:" }),
-                        create("input", { id: "start-coord", type: "text", name: "start-coord", 
-                            evl: { "input": Coords.validateInput } })
-                    ),
-                    create("div", { class: "input-container destination" },
-                        create("label", { for: "destination-coord", tc: "Destination:" }),
-                        create("input", { id: "destination-coord", type: "text", name: "destination-coord",
-                            evl: { "input": Coords.validateInput } })
-                    ),
-                    create("button", { class: "run-coords", tc: "GO",
-                        evl: { "click": Animate.moveAlongPath }}),
+            create("form", { id: "run-coords" },
+                create("div", { class: "input-container start" },
+                    create("label", { for: "start-coord", tc: "Start:" }),
+                    create("input", { id: "start-coord", type: "text", name: "start-coord", spellcheck: "false",
+                        evl: { "input": Coords.validateInput } })
+                ),
+                create("div", { class: "input-container destination" },
+                    create("label", { for: "destination-coord", tc: "Destination:" }),
+                    create("input", { id: "destination-coord", type: "text", name: "destination-coord", spellcheck: "false",
+                        evl: { "input": Coords.validateInput } })
                 ),
                 create("div", { class: "previous-path" },
-                    create("span", { class: "path", tc: "Shortest path from A1 to B3 is 1 move" })
-                )
+                    create("span", { class: "path-desc", tc: "" }),
+                    create("span", { class: "path-coords", tc: "" })
+                    ),
+                create("button", { class: "run-coords", tc: "ANIMATE",
+                    evl: { "click": Animate.moveAlongPath }}),
             )
         );
     }

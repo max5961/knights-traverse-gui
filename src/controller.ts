@@ -3,11 +3,65 @@ import { createElement as create } from "./createElement";
 import { Build } from "./view";
 import { shortestPath } from "./model";
 
+export class DOM {
+    static getKnight(): HTMLElement {
+        return document.querySelector(".knight-piece")!;
+    }
+
+    static getChessboard(): HTMLElement {
+        return document.querySelector(".chess-board")!;
+    }
+
+    static getMarker(): HTMLElement {
+        return document.querySelector(".marker")!;
+    }
+
+    static getAllMarkers(): NodeListOf<HTMLElement> {
+        return document.querySelectorAll(".marker")!;
+    }
+
+    static getStartLocationSquare(): HTMLElement {
+        return document.querySelector(".start-location")!;
+    }
+
+    static getDestLocationSquare(): HTMLElement | null {
+        return document.querySelector(".destination");
+    }
+
+    static getFirstSquare(): HTMLElement {
+        return document.querySelector(".square")!;
+    }
+
+    static getAllSquares(): NodeListOf<HTMLElement> {
+        return document.querySelectorAll(".square")!;
+    }
+
+    static getStartCoordInput(): HTMLInputElement {
+        return document.querySelector("input#start-coord")!;
+    }
+
+    static getDestCoordInput(): HTMLInputElement {
+        return document.querySelector("input#destination-coord")!;
+    }
+
+    static getGoButton(): HTMLButtonElement {
+        return document.querySelector("button.run-coords")!;
+    }
+
+    static getPathDesc(): HTMLElement {
+        return document.querySelector(".path-desc")!;
+    }
+
+    static getPathCoords(): HTMLElement {
+        return document.querySelector(".path-coords")!;
+    }
+}
+
 export class Load {
     static defaultUI() {
         const content: HTMLElement = document.querySelector("#content")!;
 
-        content.appendChild(Build.mainSection());
+        content.appendChild(Build.mainForm());
         content.appendChild(Build.boardContainer());
     }
 }
@@ -18,6 +72,11 @@ export class Animate {
 
         const startCoords: number[] = Coords.getStart();
         const destCoords: number[] = Coords.getDest();
+
+        if (!startCoords || !destCoords) {
+            return;
+        }
+
         const path: number[][] = shortestPath(startCoords, destCoords);
         const dCoords: number[][] | any = [];
 
@@ -33,17 +92,23 @@ export class Animate {
             dCoords.push([dx, dy]);
         }
 
-        Animate.animateSingleCoord(dCoords);
+        Animate.transitionDCoords(dCoords, path);
     }
 
-    static animateSingleCoord(dCoords: number[][] | any, i: number = 1): any {
+    static transitionDCoords(
+        dCoords: number[][] | any,
+        path: number[][],
+        i: number = 1,
+    ): any {
         if (!dCoords.length) {
+            Coords.updateInputValue();
             return;
         }
 
+        // if first iteration, append a start marker to the knight position before movement
         let startPosition: HTMLElement;
         if (i === 1) {
-            startPosition = Animate.getWithinSquare();
+            startPosition = Animate.getKnightPosition();
         }
 
         const [dx, dy] = dCoords.shift();
@@ -102,10 +167,9 @@ export class Animate {
             })
 
             // reset the position by removing and adding a new knight
-            // otherwise the absolute position stays at the knights start coord
-            // recursively run the function until dCoords empty
+            // otherwise the absolute position never updates from the original start position
             .then(() => {
-                const newPosition = Animate.getWithinSquare();
+                const newKnightPosition = Animate.getKnightPosition();
                 knight.remove();
 
                 // first iteration
@@ -117,16 +181,18 @@ export class Animate {
 
                 // last iteration
                 if (!dCoords.length) {
-                    newPosition.removeChild(newPosition.firstElementChild);
-                    newPosition.classList.remove("destination");
+                    newKnightPosition.removeChild(
+                        newKnightPosition.firstElementChild,
+                    );
+                    newKnightPosition.classList.remove("destination");
                 } else {
-                    newPosition.appendChild(
+                    newKnightPosition.appendChild(
                         create("div", { class: "marker", tc: `${i}` }),
                     );
                 }
 
-                new DraggableKnight(newPosition);
-                Animate.animateSingleCoord(dCoords, i + 1);
+                new DraggableKnight(newKnightPosition);
+                Animate.transitionDCoords(dCoords, path, i + 1);
             });
     }
 
@@ -150,19 +216,19 @@ export class Animate {
     }
 
     static getKnightTransitionTime(): number | any {
-        const knight: HTMLElement = document.querySelector(".knight-piece")!;
+        const knight = DOM.getKnight();
         const transitionDuration: string =
             window.getComputedStyle(knight).transitionDuration;
 
         return parseFloat(transitionDuration) * 1000;
     }
 
-    static getWithinSquare() {
-        const knight: HTMLElement = document.querySelector(".knight-piece")!;
+    // knight is absolutely positioned.  knight.parentElement won't work to get the new position
+    static getKnightPosition() {
+        const knight = DOM.getKnight();
         const kPosition = knight.getBoundingClientRect();
 
-        const squares: NodeListOf<HTMLElement> =
-            document.querySelectorAll(".square");
+        const squares = DOM.getAllSquares();
         let targetSquare: HTMLElement | any;
         squares.forEach((square) => {
             const sPosition = square.getBoundingClientRect();
@@ -178,16 +244,40 @@ export class Animate {
 
         return targetSquare;
     }
+
+    static updateMessage(): void {
+        const path = Coords.getShortestPath();
+        if (!path) {
+            return;
+        }
+
+        const pathDesc = DOM.getPathDesc();
+        const pathCoords = DOM.getPathCoords();
+        const steps = path.length - 1;
+
+        // prettier-ignore
+        const descText = 
+            `The shortest path from ${Coords.getLetterCoords(path[0])} to ${Coords.getLetterCoords(path[path.length - 1])} is ${steps} steps`;
+
+        let coordText = "";
+        for (let i = 0; i < path.length; i++) {
+            const letterCoord = Coords.getLetterCoords(path[i]);
+            if (i === path.length - 1) {
+                coordText += `${letterCoord}`;
+            } else {
+                coordText += `${letterCoord} > `;
+            }
+        }
+
+        pathDesc.textContent = descText;
+        pathCoords.textContent = coordText;
+    }
 }
 
 export class Coords {
     static updateInputValue(): void {
-        const startInput: HTMLInputElement =
-            document.querySelector("input#start-coord")!;
-
-        const destInput: HTMLInputElement = document.querySelector(
-            "input#destination-coord",
-        )!;
+        const startInput = DOM.getStartCoordInput();
+        const destInput = DOM.getDestCoordInput();
 
         const start: string = Coords.getStartString();
         const dest: string | null = Coords.getDestString();
@@ -196,9 +286,11 @@ export class Coords {
         dest ? (destInput.value = dest) : (destInput.value = "");
     }
 
-    // prettier-ignore
-    static updateLocationFromInput(className: string, inputValue: string): void {
-        const squares = Coords.getAllSquares();
+    static updateLocationFromInput(
+        className: string,
+        inputValue: string,
+    ): void {
+        const squares = DOM.getAllSquares();
         squares.forEach((square) => {
             if (square.classList.contains(className)) {
                 square.classList.remove(className);
@@ -253,10 +345,8 @@ export class Coords {
             return;
         }
 
-        // prettier-ignore
-        const startInput: HTMLInputElement = (document.querySelector("input#start-coord") as HTMLInputElement);
-        // prettier-ignore
-        const destInput: HTMLInputElement = (document.querySelector("input#destination-coord") as HTMLInputElement);
+        const startInput = DOM.getStartCoordInput();
+        const destInput = DOM.getDestCoordInput();
 
         if (inputField === startInput && e.target.value === destInput.value) {
             e.target.value = e.target.value.slice(0, 1);
@@ -275,6 +365,14 @@ export class Coords {
         if (Coords.inputIsValid(destInput.value)) {
             Coords.updateLocationFromInput("destination", destInput.value);
         }
+
+        if (
+            Coords.inputIsValid(startInput.value) &&
+            Coords.inputIsValid(destInput.value)
+        ) {
+            const path = shortestPath(Coords.getStart(), Coords.getDest());
+            Animate.updateMessage();
+        }
     }
 
     static getStart(): number[] | any {
@@ -282,7 +380,8 @@ export class Coords {
     }
 
     static getStartString(): string {
-        return Coords.getStringCoords("start-location");
+        const coords = Coords.getStart();
+        return Coords.getLetterCoords(coords);
     }
 
     static getDest(): number[] | any {
@@ -290,11 +389,12 @@ export class Coords {
     }
 
     static getDestString(): string {
-        return Coords.getStringCoords("destination");
+        const coords = Coords.getDest();
+        return Coords.getLetterCoords(coords);
     }
 
     static getCoords(targetClass: string): number[] | any {
-        const squares = Coords.getAllSquares();
+        const squares = DOM.getAllSquares();
 
         let coords: number[] | null = null;
         squares.forEach((square) => {
@@ -310,8 +410,7 @@ export class Coords {
         return coords;
     }
 
-    static getStringCoords(targetClass: string): string | any {
-        const coords = Coords.getCoords(targetClass);
+    static getLetterCoords(coords: number[]): string | any {
         const letters = [null, "A", "B", "C", "D", "E", "F", "G", "H"];
         if (!coords) {
             return null;
@@ -319,8 +418,15 @@ export class Coords {
         return `${letters[coords[0]]}${coords[1]}`;
     }
 
-    static getAllSquares(): NodeListOf<HTMLElement> {
-        return document.querySelectorAll(".square");
+    static getShortestPath(): number[][] | any {
+        const startCoord = Coords.getStart();
+        const destCoord = Coords.getDest();
+
+        if (!startCoord || !destCoord) {
+            return null;
+        }
+
+        return shortestPath(startCoord, destCoord);
     }
 }
 
@@ -339,13 +445,13 @@ export class DestMarker {
         }, 0);
     }
 
-    // prettier-ignore
-    static setDestination(e: any, parentElement: HTMLElement | null = null): void {
+    static setDestination(
+        e: any,
+        parentElement: HTMLElement | null = null,
+    ): void {
         Animate.clearPreviousMarkers();
 
-        const locations: NodeListOf<HTMLElement> = document.querySelectorAll(
-            ".chess-board .square",
-        );
+        const locations = DOM.getAllSquares();
 
         locations.forEach((square) => {
             if (square.classList.contains("knight-location")) {
@@ -362,11 +468,12 @@ export class DestMarker {
         if (destination.classList.contains("start-location")) {
             return;
         }
+
         destination.classList.add("destination");
         destination.appendChild(Build.destinationMarker());
         DestMarker.animateDestinationMarker();
-
         Coords.updateInputValue();
+        Animate.updateMessage();
     }
 }
 
@@ -397,12 +504,11 @@ export class DraggableKnight {
         // make sure there is only one location with the start location class
         this.removeGlobalClassName("start-location", ".square");
         parentElement.classList.add("start-location");
-
         parentElement.appendChild(knightImage);
     }
 
     setClick(e: any) {
-        const knight: HTMLElement = document.querySelector(".knight-piece")!;
+        const knight = DOM.getKnight();
 
         // set the mouseDown property if mousedown or mouseup on knight
         // dragKnight changes location of the knight piece based on the cursor position
@@ -444,29 +550,29 @@ export class DraggableKnight {
     placeKnight(e: any) {
         // remove the knight from the DOM
         // a new knight will be appended to the chess board when a new DraggableKnight object is initialized
-        (document.querySelector(".knight-piece") as HTMLElement).remove();
+        DOM.getKnight().remove();
 
         // originalStartPoint is where the knight will be appended if its not in a valid spot upon placement
-        const originalStartPoint: HTMLElement =
-            document.querySelector(".start-location")!;
+        // const originalStartPoint: HTMLElement =
+        //     document.querySelector(".start-location")!;
+        const originalStartPoint = DOM.getStartLocationSquare();
 
         // check to see if the knight has traveled out of bounds of the chess board
         // if it is out of bounds, append a new knight to the originalStartPoint
-        const chessBoard: HTMLElement = document.querySelector(".chess-board")!;
+        const chessBoard = DOM.getChessboard();
         if (!this.isWithinElement(e, chessBoard)) {
             new DraggableKnight(originalStartPoint);
             return;
         }
 
-        const locations: NodeListOf<HTMLElement> =
-            document.querySelectorAll(".square");
-
+        const locations = DOM.getAllSquares();
         locations.forEach((location) => {
             if (this.isWithinElement(e, location)) {
                 if (this.isValidDropLoc(location)) {
                     // knight is within the bounds of the specified square AND is on a valid drop point
                     // append a new knight to the specified square
                     new DraggableKnight(location);
+                    Animate.updateMessage();
                     Coords.updateInputValue();
                     return;
                 } else {
@@ -514,8 +620,7 @@ export class DraggableKnight {
     }
 
     hoverSquare(e: any): void {
-        const squares: NodeListOf<HTMLElement> =
-            document.querySelectorAll(".square");
+        const squares = DOM.getAllSquares();
         squares.forEach((square) => {
             if (this.isWithinElement(e, square)) {
                 if (this.isValidDropLoc(square)) {
